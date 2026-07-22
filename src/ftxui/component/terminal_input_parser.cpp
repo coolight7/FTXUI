@@ -92,6 +92,11 @@ const std::map<std::string, std::string> g_uniformize = {
     {"\x1B[V", "\x1B[21~"},  // F10
     {"\x1B[W", "\x1B[23~"},  // F11
     {"\x1B[X", "\x1B[24~"},  // F12
+
+    // kitty 键盘协议 (disambiguate) 下 Escape 上报为 CSI 27 u, 还原为裸 ESC,
+    // 使其仍等同于 Event::Escape.
+    {"\x1B[27u", "\x1B"},    // Escape (kitty)
+    {"\x1B[27;1u", "\x1B"},  // Escape (kitty, 显式 modifier=1)
 };
 
 TerminalInputParser::TerminalInputParser(std::function<void(Event)> out)

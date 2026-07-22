@@ -702,6 +702,17 @@ void App::Internal::Install() {
   // 使应用能区分"粘贴的换行"与"用户按键 Enter".
   enable({DECMode::kBracketedPaste});
 
+  // 启用 kitty 键盘协议 (disambiguate, flags=1): 使 Shift+Enter 等修饰键组合
+  // 上报为 CSI u 序列 (如 Shift+Enter = \x1B[13;2u), 以便与普通 Enter 区分.
+  // 退出时 pop 该协议.
+  TerminalSend("\x1B[>1u");
+  on_exit_functions.emplace([this] { TerminalSend("\x1B[<u"); });
+
+  // 同时启用 modifyOtherKeys (level 1): xterm 系终端据此把 Shift+Enter 上报为
+  // \x1B[27;2;13~. 与 kitty 协议互补 (各终端只用其支持的一种), 扩大兼容范围.
+  TerminalSend("\x1B[>4;1m");
+  on_exit_functions.emplace([this] { TerminalSend("\x1B[>4m"); });
+
   // After installing the new configuration, flush it to the terminal to
   // ensure it is fully applied:
   TerminalFlush();
