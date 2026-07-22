@@ -315,6 +315,7 @@ enum class DECMode : std::uint16_t {
   kMouseUrxvtMode = 1015,
   kMouseSgrPixelsMode = 1016,
   kAlternateScreen = 1049,
+  kBracketedPaste = 2004,
 };
 
 // Device Status Report (DSR) {
@@ -696,6 +697,10 @@ void App::Internal::Install() {
     enable({DECMode::kMouseUrxvtMode});
     enable({DECMode::kMouseSgrExtMode});
   }
+
+  // 启用 bracketed paste: 粘贴内容会被 \x1B[200~ ... \x1B[201~ 包裹,
+  // 使应用能区分"粘贴的换行"与"用户按键 Enter".
+  enable({DECMode::kBracketedPaste});
 
   // After installing the new configuration, flush it to the terminal to
   // ensure it is fully applied:
