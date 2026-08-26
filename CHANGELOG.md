@@ -5,11 +5,27 @@ Next
 ====
 
 ### Component
+- Bugfix: Stop escape sequences from eating the ESC byte starting the next one.
+  Pressing the ESC key while moving the mouse, or any sequence truncated by the
+  terminal, used to be merged with the sequence following it, emitting its
+  remaining bytes as text. An ESC is now always treated as the start of a new
+  sequence. Thanks @Machillka. See #1345.
 - Bugfix: Prevent labeled sliders from stretching vertically when placed in a
   container next to taller components. Thanks @Machillka. See #1340.
 - Bugfix: Ensure horizontal and vertical containers initially select a focusable
   child, preventing lost focus when entering nested containers whose first
   child is non-focusable. Thanks @Machillka. See #1337.
+- Bugfix: Propagate the container's active state through `CatchEvent`, preventing
+  inactive wrapped components from incorrectly reporting `Active() == true`.
+  Thanks @Machillka. See #1342.
+
+### Dom
+- Bugfix: Avoid division by zero when selecting rows, columns, or rectangles on
+  an empty table. Thanks @Machillka. See #1344.
+
+### Build
+- Bugfix: Fix missing CMake targets namespace in exported package when C++20
+  modules are enabled. Thanks @patlefort. See #1322.
 
 ### Screen
 - The Unicode tables are updated from 13.0.0 to 17.0.0. Code points assigned by
