@@ -164,7 +164,9 @@ void Selection::AddPart(std::string_view part, int y, int left, int right) {
       return;
     }
 
-    parts_ << part;
+    // 同行但存在间隙列 (两段选中区域之间隔了不可选中的空白/分隔元素):
+    // 插入一个空格保持词间距离, 否则复制结果丢失空格 ("foobar")
+    parts_ << ' ' << part;
   }();
   y_ = y;
   x_ = right;
