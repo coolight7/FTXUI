@@ -18,14 +18,40 @@ Next
 - Bugfix: Propagate the container's active state through `CatchEvent`, preventing
   inactive wrapped components from incorrectly reporting `Active() == true`.
   Thanks @Machillka. See #1342.
+- Bugfix: Update selection in horizontal and vertical containers when the
+  selected child dynamically becomes unfocusable. Thanks @Machillka. See #1346.
+- Bugfix: Drain all available terminal input each frame on POSIX, instead of at
+  most 128 bytes. Fast trackpad scrolling no longer queues wheel events that
+  delay subsequent input. Thanks @mati5kova. See #1348.
+- Bugfix: Close an open `Dropdown` when another component takes the focus.
+  Opening a dropdown placed above an open one used to leave both open and
+  overlapping. Thanks @bleakglory. See #1278.
 
 ### Dom
 - Bugfix: Avoid division by zero when selecting rows, columns, or rectangles on
   an empty table. Thanks @Machillka. See #1344.
+- Bugfix: `Table` selections no longer wrap around when an index is out of
+  range. For instance `SelectRows(2, -1)` on a 2-row table now selects nothing
+  instead of the whole table. Thanks @lukester1975. See #806.
+
+### Screen
+- Feature: Add `Color::GetRed()`, `GetGreen()`, `GetBlue()` and `GetAlpha()`.
+  Palette colors are resolved to their RGB values. See #486.
 
 ### Build
+- Bugfix: Export `gaugeCharset()` from the `ftxui.dom` module. It was added to
+  the headers, but never re-exported, so it was unreachable from
+  `import ftxui;`. The nine `flex_factor()` decorators (`flex_factor`,
+  `flex_grow_factor`, `flex_shrink_factor` and their `x`/`y` variants) and
+  `Terminal::TerminalInfo` / `Terminal::ComputeColorSupport` were missing the
+  same way and are now exported too. Thanks @woquchonglang. See #1360.
 - Bugfix: Fix missing CMake targets namespace in exported package when C++20
   modules are enabled. Thanks @patlefort. See #1322.
+
+### Dom
+- Bugfix: Fill horizontal gaps with spaces during text selection so copying text
+  from elements with spacing (such as `paragraph()`) preserves inter-word
+  spaces. Thanks @aleroot. See #1318.
 
 ### Screen
 - The Unicode tables are updated from 13.0.0 to 17.0.0. Code points assigned by
@@ -44,6 +70,10 @@ Next
   `*.js` file instead, so that file was served without COEP and `new Worker()`
   failed, leaving every example blank. The ServiceWorker now adds the headers
   to all same-origin responses.
+- Bugfix: Stop the translated documentation pages from reloading in a loop.
+  Translations are now built with the same header as the English docs, and the
+  navigation script no longer clicks a link to the current page. Thanks
+  @dfhx5694 and @beklauter. See #1230.
 
 7.0.3 (2026-08-06)
 ------------------
