@@ -31,6 +31,43 @@ class FTXUI_EXPORT(DOM) Selection {
   Selection SaturateVertical(Box box);
   bool IsEmpty() const { return empty_; }
 
+  /// @brief The root selection (the one the user dragged).
+  ///
+  /// Containers pass a copy of the selection to their children after
+  /// clamping the endpoints to their own box ([SaturateHorizontal] /
+  /// [SaturateVertical]); those copies keep a pointer to the root.
+  ///
+  /// Nodes that emit text line by line (ftxui::Text / markdown::FlowText /
+  /// markdown::FlowCodeBlock) read the endpoints and the bounding box from the
+  /// root instead: a clamped endpoint that sits on a blank column of a row
+  /// (the hanging indent of a wrapped list item, panel padding) is treated as
+  /// "the whole row is selected" and copies text the user did not select, and
+  /// a clamped box is narrowed, which drops the other nodes of that row.
+  const Selection& Root() const { return *parent_; }
+
+  /// @brief Range of columns selected on line `y` (text-flow semantics).
+  ///
+  /// - line of the start point (end point on another line): start column to
+  ///   the end of the line (reversed selection ends at the start column)
+  /// - line of the end point: beginning of the line to the end column
+  ///   (reversed selection starts at the end column)
+  /// - lines in between: the whole line
+  ///
+  /// Unbounded sides are reported as [kUnboundedMin] / [kUnboundedMax];
+  /// intersect the range with the node's own columns to know which columns of
+  /// the node take part in the selection (empty intersection means none).
+  ///
+  /// @param y The screen line.
+  /// @param lo The first selected column of the line.
+  /// @param hi The last selected column of the line.
+  /// @return True when `y` is inside the selection; false otherwise (the
+  ///         output parameters are left untouched).
+  bool RowRange(int y, int& lo, int& hi) const;
+
+  /// Bounds reported by [RowRange] for an unbounded side.
+  static constexpr int kUnboundedMin = -(1 << 30);
+  static constexpr int kUnboundedMax = (1 << 30);
+
   void AddPart(std::string_view part, int y, int left, int right);
   std::string GetParts() { return parts_.str(); }
 

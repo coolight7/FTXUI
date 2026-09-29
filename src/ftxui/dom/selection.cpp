@@ -68,6 +68,44 @@ const Box& Selection::GetBox() const {
   return box_;
 }
 
+bool Selection::RowRange(int y, int& lo, int& hi) const {
+  const Selection& self = *parent_;
+  if (self.empty_) {
+    return false;
+  }
+  const int first_row = std::min(self.start_y_, self.end_y_);
+  const int last_row = std::max(self.start_y_, self.end_y_);
+  if (y < first_row || y > last_row) {
+    return false;
+  }
+
+  // Single line selection: both endpoints are on this line.
+  if (self.start_y_ == self.end_y_) {
+    lo = std::min(self.start_x_, self.end_x_);
+    hi = std::max(self.start_x_, self.end_x_);
+    return true;
+  }
+
+  // Multi line selection: the start line runs to its end, the end line starts
+  // at its beginning, the lines in between are fully selected. A reversed
+  // (bottom-up) selection is the mirror image: the start line ends at the
+  // start column and the end line begins at the end column.
+  const bool forward = self.start_y_ < self.end_y_;
+  if (y == self.start_y_) {
+    lo = forward ? self.start_x_ : kUnboundedMin;
+    hi = forward ? kUnboundedMax : self.start_x_;
+    return true;
+  }
+  if (y == self.end_y_) {
+    lo = forward ? kUnboundedMin : self.end_x_;
+    hi = forward ? self.end_x_ : kUnboundedMax;
+    return true;
+  }
+  lo = kUnboundedMin;
+  hi = kUnboundedMax;
+  return true;
+}
+
 /// @brief Saturate the selection to be inside the box.
 /// This is called by `hbox` to propagate the selection to its children.
 /// @param box The box to saturate the selection in.

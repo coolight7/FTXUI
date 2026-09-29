@@ -78,32 +78,46 @@ class Text : public Node {
   }
 
   void Select(Selection& selection) override {
-    const Box selection_box = Box::Intersection(selection.GetBox(), box_);
-    if (selection_box.IsEmpty()) {
+    // The root selection decides who takes part: a box clamped by a container
+    // is narrowed when an endpoint sits on a blank column of a row, which would
+    // drop the other nodes of that row.
+    const Selection& root = selection.Root();
+    if (Box::Intersection(root.GetBox(), box_).IsEmpty()) {
       return;
     }
 
-    // Only store the selected line range. Sizing per line would allocate one
-    // entry per line of the whole text on every frame.
+    // Take the text of the selected columns line by line: the range of each
+    // line comes from the raw endpoints of the root selection (see
+    // Selection::RowRange) and is intersected with this node's columns.
+    // Clamping per line instead (with the endpoints a container handed over)
+    // treats an endpoint on a blank column of the line (the hanging indent of a
+    // wrapped list item, padding) as "the whole line is selected", so both the
+    // copied text and the highlight gain text the user did not select.
     const size_t lines_count = lineCount();
-    const size_t first = selection_box.y_min - box_.y_min;
-    const size_t last =
-        std::min<size_t>(selection_box.y_max - box_.y_min + 1, lines_count);
-    if (first >= last) {
-      return;
-    }
-    selection_first_line_ = first;
-    selection_rows_.assign(last - first, {-1, -1});
+    selection_rows_.clear();
+    bool any = false;
+    for (size_t i = 0; i < lines_count; ++i) {
+      const int y = box_.y_min + static_cast<int>(i);
+      int lo = 0;
+      int hi = -1;
+      if (!root.RowRange(y, lo, hi)) {
+        continue;
+      }
+      lo = std::max(lo, box_.x_min);
+      hi = std::min(hi, box_.x_max);
+      if (lo > hi) {
+        continue; // this node has no column on this line
+      }
+      if (!any) {
+        selection_first_line_ = i;
+        any = true;
+      }
+      // Only the selected lines are stored; lines in between keep {-1, -1}
+      // (Render indexes them by line number).
+      selection_rows_.resize(i - selection_first_line_ + 1, {-1, -1});
+      selection_rows_[i - selection_first_line_] = {lo, hi};
 
-    for (size_t i = first; i < last; ++i) {
-      const int y = box_.y_min + (int)i;
-      const Box row_box{box_.x_min, box_.x_max, y, y};
-      const Selection row_sel = selection.SaturateHorizontal(row_box);
-      const int sel_start = row_sel.GetBox().x_min;
-      const int sel_end = row_sel.GetBox().x_max;
-      selection_rows_[i - first] = {sel_start, sel_end};
-
-      selection.AddPart(lineText(i, sel_start, sel_end), y, sel_start, sel_end);
+      selection.AddPart(lineText(i, lo, hi), y, lo, hi);
     }
   }
 
